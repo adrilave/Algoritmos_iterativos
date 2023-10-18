@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Iterative Algorithms
 
-## Gradient Descent
+### Gradient Descent
 
 Pseudo-code:
  
@@ -37,6 +37,8 @@ objective_function <- function(x) {
   return(9*x[1]^2 + 2*x[1]*x[2] + x[2]^2)
 }
 
+gradient <- grad(objective_function, x= initial_parameters)
+
 gradient_descent <- function(initial_parameters , error_margin = 1e-10, theta = 0.01){
 
   parameters <- initial_parameters
@@ -60,10 +62,99 @@ gradient_descent <- function(initial_parameters , error_margin = 1e-10, theta = 
   return(round(vector_parameters,digits = 3))
 }
 gradient_descent(initial_parameters)
-    
-
 ```
 
+## Searching for the optimal step size
+
+There are several methods for finding which step size to use in every iteration, if possible, the easiest form to find the best step size is just making the first derivative of the function respect to theta = 0, because is not always possible, we can use other methods such as:
+
+- Golden Search (No need for derivative)
+
+- Bisection Method (First derivative)
+
+- Newton's Method (Second derivative)
+
+- Backtracking Line Search (No need for derivative)
+
+### Golden Search
+
+Using the golden search we don't need to derive with respect to theta, acts between a known interval. 
+
+```{r}
+
+#If we want to maximize theta
+
+objective_function_g_r <- function(x) {
+  return(4*sin(x) * (1+cos(x)))
+}
+
+starting_interval <- c(0,pi/2)
+
+golden_ratio = ((1+sqrt(5))/2)-1
+
+f_a1 <- objective_function_g_r(starting_interval[1])
+f_b1 <- objective_function_g_r(starting_interval[2])
+
+golden_search_max <- function(starting_interval, error_margin = 1e-10){
+  
+  while(abs(f_a1-f_b1) > error_margin){
+
+    a1 <- starting_interval[1] + (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
+    b1 <- starting_interval[2] - (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
+
+    f_a1 <- objective_function_g_r(a1)
+    f_b1 <- objective_function_g_r(b1)
+    
+    if(f_a1 > f_b1){
+      
+    starting_interval[2] <- b1
+    
+    
+    }
+    if(f_a1 < f_b1){
+      
+    starting_interval[1] <- a1
+  
+    
+    }
+    
+  }
+  return(min(a1,b1))
+}
+golden_search_max(starting_interval)
+
+
+#If we want to minimize theta
+
+golden_search_min <- function(starting_interval, error_margin = 1e-10){
+  
+  while(abs(f_a1-f_b1) > error_margin){
+
+    a1 <- starting_interval[1] + (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
+    b1 <- starting_interval[2] - (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
+
+    f_a1 <- objective_function_g_r(a1)
+    f_b1 <- objective_function_g_r(b1)
+    
+    if(f_a1 > f_b1){
+      
+    starting_interval[1] <- a1
+    
+    
+    }
+    if(f_a1 < f_b1){
+      
+    starting_interval[2] <- b1
+  
+    
+    }
+    
+  }
+  return(min(a1,b1))
+}
+golden_search_min(starting_interval)
+
+```
 
 
 
