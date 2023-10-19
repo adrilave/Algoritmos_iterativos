@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Iterative Algorithms
 
-### Gradient Descent
+## Gradient Descent
 
 Pseudo-code:
  
@@ -30,18 +30,26 @@ Pseudo-code:
 ```{r}
 library(numDeriv)
 
-initial_parameters <- c(0,-1)
+parameters <- c(0,-1)
 
+vector_parameters <- c(parameters[1], parameters[2])
+
+# Exercise 2
 
 objective_function <- function(x) {
   return(9*x[1]^2 + 2*x[1]*x[2] + x[2]^2)
 }
 
-gradient <- grad(objective_function, x= initial_parameters)
+# Exercise 4
 
-gradient_descent <- function(initial_parameters , error_margin = 1e-10, theta = 0.01){
+objective_function_2 <- function(x) {
+  return(x[1] - x[2] + 2*x[1]^2 +2*x[1]*x[2] + x[2]^2)
+}
 
-  parameters <- initial_parameters
+gradient <- grad(objective_function, x= parameters)
+
+gradient_descent <- function(parameters , error_margin = 1e-10, theta = 0.01){
+
   x1 <- parameters[1]
   x2 <- parameters[2]
   #.... for more parameters
@@ -61,7 +69,7 @@ gradient_descent <- function(initial_parameters , error_margin = 1e-10, theta = 
   }
   return(round(vector_parameters,digits = 3))
 }
-gradient_descent(initial_parameters)
+gradient_descent(parameters)
 ```
 
 ## Searching for the optimal step size
@@ -270,5 +278,43 @@ newton_method <- function(initial_theta, error_margin = 1e-10){
 newton_method(pi/2)
 ```
 
+## Conjugate gradient
+
+
+
+```{r}
+
+A <- matrix(data = c(4,-1, 1, -1, 4, -2, 1, -2, 4), ncol = 3, nrow = 3)
+X0 <- matrix(data = c(0, 0, 0), ncol = 1)
+b <- matrix(data = c(12, -1, 5), ncol = 1)
+
+
+conjugate_gradient <- function(A, X0, b, error_margin = 1e-10){
+  
+  r0 = A %*% X0 - b
+  d0 = -r0
+  r = 0
+  X = 0
+
+  while(r > error_margin){
+
+    theta = (t(r0)%*%r0)/(t(d0)%*%A%*%d0)
+
+    X <- X0 + theta0%*%d0
+
+    r = A%*%X - b
+
+    beta = (t(r)%*%r)/(t(r0)%*%r0)
+
+    d = -r1 + beta%*%d0
+
+    r0 <- r
+    X0 <- X
+    d <- d0
+  }
+  return(X0)
+}
+conjugate_gradient(A, X0, b)
+```
 
 
