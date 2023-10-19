@@ -156,6 +156,119 @@ golden_search_min(starting_interval)
 
 ```
 
+### Bisection Method
+
+Uses the first derivative to find the root or roots of the function I.e f'(x) = 0.
+
+Pseudo-code:
+
+1. Find an interval where f'(a) < 0 & f'(b) > 0, then (a,b)
+
+2. theta = a+b/2
+
+3. If f'(theta) = 0 ; STOP, that is the optimal theta
+
+4. If f'(theta) < 0 ; Minimum is in (theta, b) ; a = theta & b = b
+
+5. If f'(theta) > 0 ; Minimum is in (a, theta) ; a = a & b = theta
+
+6.Repeat until 3 or arrived to a error_margin
+
+```{r}
+objective_function_b_m <- function(x) {
+  return(0.675 -13.28*x + 81.19*x^2)
+}
+bisection_example <- expression(0.675 -13.28*x + 81.19*x^2)
+first_deriv_f_b_m <- D(expr = bisection_example,name = "x")
+
+
+derivative_objective_function_b_m <- function(x) {
+  return(81.19 * (2 * x) - 13.28)
+}
+
+interval <- c(0,1)
+
+bisection_method <- function(interval, error_margin = 1e-10){
+  
+  a = interval[1]
+  b = interval[2]
+  
+  while(abs(a - b) > error_margin){
+    
+    theta = 1/2*(a+b)
+    
+    derivative_objective_function_b_m(theta)
+    print(a)
+    print(b)
+    
+    if(derivative_objective_function_b_m(theta) < 0){
+      
+      a <- theta
+      
+    }else if(derivative_objective_function_b_m(theta) > 0){
+      
+      b <- theta
+    
+    }else{
+      return(theta)
+    }
+  }
+  return(theta)
+}
+bisection_method(interval)
+
+```
+
+### Newton's Method
+
+Using Taylor Series to instead of finding the root using a linear approximation, uses a quadratic convergence, it does not guaranteed success, is needed to be near the minimum in the choose of theta.
+
+                    theta_1 = theta_0 - f'(theta_0)/f''(theta_0)
+
+Pseudo-code:
+
+1. Find the first derivative and the second derivatives respect of theta.
+
+2. Apply the Newton's Method formula until f'(theta) = 0.
+
+```{r}
+initial_expression <- expression(4 * sin(x) * (1 + cos(x)))
+
+first_deriv_n_m <- D(initial_expression, name = "x")
+first_deriv_n_m
+
+first_derivative_objective_function <- function(x){
+  return(4 * cos(x) * (1 + cos(x)) - 4 * sin(x) * sin(x))
+}
+
+first_derivative_expression <- expression(4 * cos(x) * (1 + cos(x)) - 4 * sin(x) * sin(x))
+
+second_derivative_n_m <- D(first_derivative_expression, name = "x")
+second_derivative_n_m
+
+second_derivative_objective_function <- function(x){
+  return(-(4 * cos(x) * sin(x) + 4 * sin(x) * (1 + cos(x)) + (4 * cos(x) * 
+    sin(x) + 4 * sin(x) * cos(x))))
+}
+
+first_derivative_objective_function(pi/2)
+second_derivative_objective_function(pi/2)
+  
+newton_method <- function(initial_theta, error_margin = 1e-10){
+  
+  theta <- 0
+  
+  while(abs(first_derivative_objective_function(theta)) > error_margin){
+    
+    theta <- initial_theta - (first_derivative_objective_function(initial_theta)/second_derivative_objective_function(initial_theta))
+    
+    initial_theta <- theta
+    
+  }
+  return(theta)
+}
+newton_method(pi/2)
+```
 
 
 
