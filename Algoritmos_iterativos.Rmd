@@ -45,31 +45,34 @@ objective_function <- function(x) {
 objective_function_2 <- function(x) {
   return(x[1] - x[2] + 2*x[1]^2 +2*x[1]*x[2] + x[2]^2)
 }
+objective_function_2(parameters)
 
 gradient <- grad(objective_function, x= parameters)
 
-gradient_descent <- function(parameters , error_margin = 1e-10, theta = 0.01){
+gradient_descent <- function(objective_function, parameters , error_margin = 1e-06){
 
-  x1 <- parameters[1]
-  x2 <- parameters[2]
-  #.... for more parameters
-  
-  while(sum(abs(gradient)) > error_margin){
+  funcion_lambda <- function(lambda){
+      return(objective_function_2(parameters-lambda*gradient))
+  }
+  gradient <- grad(objective_function, x = parameters)
+    
+  while(sum(abs(gradient)) > 0.0001){
     
     gradient <- grad(objective_function, x = parameters)
     
-    new_parameters <- parameters - 0.0833 * gradient
+    ldp <- golden_search_min(funcion_lambda, 0, 1,error_margin = 1e-10)
+    
+    new_parameters <- parameters - ldp * gradient
     
     parameters <- new_parameters
+    print(gradient)
     
-    x1 <- parameters[1]
-    x2 <- parameters[2]
-    vector_parameters <- c(x1,x2)
     
   }
-  return(round(vector_parameters,digits = 3))
+  parameters <- round(parameters,2)
+  return(parameters)
 }
-gradient_descent(parameters)
+gradient_descent(objective_function_2,c(0,-1))
 ```
 
 ## Searching for the optimal step size
@@ -100,28 +103,31 @@ starting_interval <- c(0,pi/2)
 
 golden_ratio = ((1+sqrt(5))/2)-1
 
-f_a1 <- objective_function_g_r(starting_interval[1])
-f_b1 <- objective_function_g_r(starting_interval[2])
 
-golden_search_max <- function(starting_interval, error_margin = 1e-10){
+
+golden_search_max <- function(objective_function, a, b, error_margin = 1e-10){
+  
+  golden_ratio = ((1+sqrt(5))/2)-1
+  f_a1 <- objective_function(a)
+  f_b1 <- objective_function(b)
   
   while(abs(f_a1-f_b1) > error_margin){
 
-    a1 <- starting_interval[1] + (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
-    b1 <- starting_interval[2] - (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
+    a1 <- a + (1-golden_ratio)*(b - a)
+    b1 <- b - (1-golden_ratio)*(b - a)
 
-    f_a1 <- objective_function_g_r(a1)
-    f_b1 <- objective_function_g_r(b1)
+    f_a1 <- objective_function(a1)
+    f_b1 <- objective_function(b1)
     
     if(f_a1 > f_b1){
       
-    starting_interval[2] <- b1
+    b <- b1
     
     
     }
     if(f_a1 < f_b1){
       
-    starting_interval[1] <- a1
+    a <- a1
   
     
     }
@@ -129,30 +135,36 @@ golden_search_max <- function(starting_interval, error_margin = 1e-10){
   }
   return(min(a1,b1))
 }
-golden_search_max(starting_interval)
+golden_search_max(objective_function = objective_function_g_r, a = 0, b = pi/2)
 
 
 #If we want to minimize theta
 
-golden_search_min <- function(starting_interval, error_margin = 1e-10){
+golden_search_min <- function(objective_function, a, b, error_margin = 1e-10){
+  
+  golden_ratio = ((1+sqrt(5))/2)-1
+  f_a1 <- objective_function(a)
+  f_b1 <- objective_function(b)
+  a1 <- 1
+  b1 <- 1
   
   while(abs(f_a1-f_b1) > error_margin){
 
-    a1 <- starting_interval[1] + (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
-    b1 <- starting_interval[2] - (1-golden_ratio)*(starting_interval[2]-starting_interval[1])
+    a1 <- a + (1-golden_ratio)*(b - a)
+    b1 <- b - (1-golden_ratio)*(b - a)
 
-    f_a1 <- objective_function_g_r(a1)
-    f_b1 <- objective_function_g_r(b1)
+    f_a1 <- objective_function(a1)
+    f_b1 <- objective_function(b1)
     
     if(f_a1 > f_b1){
       
-    starting_interval[1] <- a1
+    a <- a1
     
     
     }
     if(f_a1 < f_b1){
       
-    starting_interval[2] <- b1
+    b <- b1
   
     
     }
@@ -160,7 +172,7 @@ golden_search_min <- function(starting_interval, error_margin = 1e-10){
   }
   return(min(a1,b1))
 }
-golden_search_min(starting_interval)
+golden_search_min(objective_function = objective_function_g_r, a = 0, b = 1)
 
 ```
 
@@ -206,8 +218,6 @@ bisection_method <- function(interval, error_margin = 1e-10){
     theta = 1/2*(a+b)
     
     derivative_objective_function_b_m(theta)
-    print(a)
-    print(b)
     
     if(derivative_objective_function_b_m(theta) < 0){
       
@@ -278,9 +288,50 @@ newton_method <- function(initial_theta, error_margin = 1e-10){
 newton_method(pi/2)
 ```
 
+## Generalized Newton's Method
+
+```{r}
+objective_function_n_m <- function(x){
+  return(x[1] - x[2] + 2 * x[1]^2 + 2 * x[1] * x[2] + x[2]^2)
+}
+
+initial_interval <- c(0,0)
+
+gradient <- grad(objective_function_n_m, x = initial_interval)
+
+hessian <- round(hessian(objective_function_n_m, x = initial_interval),5)
+
+inv_hessian <- round(solve(hessian),5)
+
+values <- initial_interval - gradient %*% inv_hessian
+
+initial_interval <- values
+
+
+newton_method_general <- function(objective_function, initial_interval, error_margin = 1e-10){
+  
+  gradient <- 1
+  hessian <- 1
+  inv_hessian <- 1
+  
+  while(sum(abs(gradient)) > error_margin){
+    
+  gradient <- grad(objective_function, x = initial_interval)
+  hessian <- round(hessian(objective_function_n_m, x = initial_interval),5)
+  inv_hessian <- round(solve(hessian),5)
+  
+  values <- initial_interval - gradient %*% inv_hessian
+  
+  initial_interval <- values
+  }
+  return(initial_interval)
+}
+
+newton_method_general(objective_function_n_m, initial_interval)
+```
+
+
 ## Conjugate gradient
-
-
 
 ```{r}
 
@@ -289,32 +340,376 @@ X0 <- matrix(data = c(0, 0, 0), ncol = 1)
 b <- matrix(data = c(12, -1, 5), ncol = 1)
 
 
-conjugate_gradient <- function(A, X0, b, error_margin = 1e-10){
+conjugate_gradient <- function(A, X0, b, error_margin = 1e-15){
   
   r0 = A %*% X0 - b
   d0 = -r0
-  r = 0
-  X = 0
+  r <- r0
 
-  while(r > error_margin){
+  while(abs(sum((r))) > error_margin){
+    
+    r0 = A %*% X0 - b
+    d0 = -r0
+    theta = (t(r0) %*% r0)/(t(d0) %*% A %*% d0)
 
-    theta = (t(r0)%*%r0)/(t(d0)%*%A%*%d0)
+    X <- X0 + as.numeric(theta) * d0
 
-    X <- X0 + theta0%*%d0
+    r <- A %*% X - b
 
-    r = A%*%X - b
+    beta = (t(r) %*% r)/(t(r0) %*% r0)
 
-    beta = (t(r)%*%r)/(t(r0)%*%r0)
-
-    d = -r1 + beta%*%d0
+    d = -r + as.numeric(beta) * d0
 
     r0 <- r
     X0 <- X
     d <- d0
   }
-  return(X0)
+  return(as.numeric(X0))
 }
 conjugate_gradient(A, X0, b)
+
 ```
 
+## Fletcher-Reeves
+
+```{r}
+objective_function_f_r <- function(x){
+  return(1/2 * x[1]^2 + x[1] * x[2] + x[2]^2)
+}
+
+parameters <- c(10, -5)
+
+fletcher_reeves <- function(objective_function_f_r, parameters, error_margin = 1e-15){
+
+gradient <- grad(objective_function_f_r,x = c(1,1))
+  
+  gradient_0 = grad(objective_function_f_r,x = parameters)
+  d0 = -gradient_0
+  gradient <- gradient_0
+
+  while(abs(sum((gradient))) > error_margin){
+    
+    gradient_0 = grad(objective_function_f_r,x = parameters)
+    
+    d0 = -gradient_0
+  
+    lambda <- backtracking_line_search(objective_function_f_r, parameters = parameters,beta = 0.5,lambda = 1,d0 = d0)
+    
+    X <- parameters + lambda * d0
+
+    gradient <- grad(objective_function_f_r,x = X)
+
+    beta = (t(gradient) %*% gradient)/(t(gradient_0) %*% gradient_0)
+
+    d = -gradient + as.numeric(beta) * d0
+
+    gradient_0 <- gradient
+    parameters <- X
+    d <- d0
+  }
+  return(round(parameters,digits = 6))
+}
+
+fletcher_reeves(objective_function_f_r,parameters = parameters)
+```
+
+## Levenberg-Marquardt
+
+```{r}
+t <- c(1,2,3,4,5,6,7,8)
+poblacion <- c(8.3,11,14.7,19.7,26.7,35.2,44.4,55.9)
+
+
+x <- c(6,0.3)
+
+residuos <- function(x,t, poblacion){
+  r <- ((x[1]*exp(x[2]*t)-poblacion))
+  return(t(r))
+}
+
+prediccion_y <-  function(x,t, poblacion){
+  pred <- ((x[1]*exp(x[2]*t)))
+  return(pred)
+}
+
+levenberg_marquardt <- function(t, poblacion, x, error_aceptado = 0.01){
+
+residuos <- function(x,t, poblacion){
+  r <- ((x[1]*exp(x[2]*t)-poblacion))
+  return(t(r))
+}
+
+r <- t(residuos(x = x, t = t, poblacion = poblacion))
+sum(r^2)
+
+delta <- 10
+
+r_new <- 1
+
+while(sum(r^2) - sum(r_new^2) > 0.001){
+  
+  r <- t(residuos(x = x, t = t, poblacion = poblacion))
+  r_t <- residuos(x = x, t = t, poblacion = poblacion)
+
+  jacobiano_r <- jacobian(func = residuos,x = x,t = t, poblacion = poblacion)
+  jacobiano_r
+  print(jacobiano_r)
+  jacobiano_transpuesto <- t(jacobiano_r)
+
+  gradiente <- jacobiano_transpuesto %*% r
+  hessiano <- jacobiano_transpuesto %*% jacobiano_r
+  diagonal_hessiano <- diag(diag(x = hessiano))
+  
+  aprox_hessiano <- hessiano + delta * diagonal_hessiano 
+  inverse_hessian <- solve(aprox_hessiano)
+  x <- x -inverse_hessian %*% gradiente
+  x <- as.vector(x)
+  
+  r_new <- t(residuos(x,t,poblacion))
+  print(x)
+  print(sum(r_new^2))
+  print(sum(r^2))
+  
+  if(sum(r_new^2) < sum(r^2)){
+    
+    delta <- delta / 10
+    
+  }
+  
+  if(sum(r_new^2) > sum(r^2)){
+    
+    delta <- delta * 10
+    
+  }
+}
+  return(x)
+}
+
+levenberg_marquardt(t,poblacion,x)
+
+```
+
+```{r}
+t <- c(0, 0.5, 1, 1.5, 2, 2.5, 3)
+poblacion <- c(1.145, 0.512, 0.401, 0.054, 0.038, 0.014, 0.046)
+
+
+x <- c(4)
+
+residuos <- function(x,t, poblacion){
+  r <- ((exp(-x[1]*t)-poblacion))
+  return(t(r))
+}
+
+prediccion_y <-  function(x,t, poblacion){
+  pred <- ((x[1]*exp(x[2]*t)))
+  return(pred)
+}
+
+levenberg_marquardt <- function(t, poblacion, x, error_aceptado = 0.01){
+
+residuos <- function(x,t, poblacion){
+  r <- ((x[1]*exp(x[2]*t)-poblacion))
+  return(t(r))
+}
+
+r <- t(residuos(x = x, t = t, poblacion = poblacion))
+sum(r^2)
+
+delta <- 10
+
+r_new <- 1
+
+  r_new_sum <- sum(r_new^2)
+  r_sum <- sum(r^2)
+
+while(r_new_sum - r_sum > 0.001){
+  
+  r <- t(residuos(x = x, t = t, poblacion = poblacion))
+  r_t <- residuos(x = x, t = t, poblacion = poblacion)
+
+  jacobiano_r <- jacobian(func = residuos,x = x,t = t, poblacion = poblacion)
+  jacobiano_r
+  print(jacobiano_r)
+  jacobiano_transpuesto <- t(jacobiano_r)
+
+  gradiente <- jacobiano_transpuesto %*% r
+  hessiano <- jacobiano_transpuesto %*% jacobiano_r
+  
+  aprox_hessiano <- hessiano + delta * hessiano
+  inverse_hessian <- 1/aprox_hessiano
+  x <- x -inverse_hessian * gradiente
+  x <- as.vector(x)
+  
+  r_new <- t(residuos(x,t,poblacion))
+  r <- as.vector(r)
+  r_new <- as.vector(r_new)
+  r_new_sum <- sum(r_new^2)
+  r_sum <- sum(r^2)
+  
+  if(r_new_sum < r_sum){
+    
+    delta <- delta / 10
+    
+  }
+  
+  if(r_new_sum > r_sum){
+    
+    delta <- delta * 10
+    
+  }
+}
+  return(x)
+}
+
+levenberg_marquardt(t,poblacion,x)
+
+```
+
+
+## Backtracking Line Search
+
+```{r}
+
+d0 <- -grad(objective_function,x = parameters)
+
+backtracking_line_search <- function(objective_function, parameters, beta, lambda = 1, d0){
+
+  while(objective_function(parameters + lambda*d0) >= objective_function(parameters) + beta * lambda * t(grad(objective_function,x = parameters)) %*% d0){
+    lambda <- lambda * beta
+  }
+  return(lambda)
+}
+
+lambda <- backtracking_line_search(objective_function,parameters, beta = 0.5, lambda = 1,d0)
+```
+
+```{r}
+objective_function_f_r <- function(x){
+  return(1/2 * x[1]^2 + x[1] * x[2] + x[2]^2)
+}
+
+parameters <- c(10, -5)
+
+fletcher_reeves <- function(objective_function_f_r, parameters, error_margin = 1e-15){
+
+gradient <- grad(objective_function_f_r,x = c(1,1))
+  
+  gradient_0 = grad(objective_function_f_r,x = parameters)
+  d0 = -gradient_0
+  gradient <- gradient_0
+
+  while(abs(sum((gradient))) > error_margin){
+    
+    gradient_0 = grad(objective_function_f_r,x = parameters)
+    
+    d0 = -gradient_0
+  
+    lambda <- backtracking_line_search(objective_function_f_r, parameters = parameters,beta = 0.5,lambda = 1,d0 = d0)
+    
+    X <- parameters + lambda * d0
+
+    gradient <- grad(objective_function_f_r,x = X)
+
+    beta = (t(gradient) %*% gradient)/(t(gradient_0) %*% gradient_0)
+
+    d = -gradient + as.numeric(beta) * d0
+
+    gradient_0 <- gradient
+    parameters <- X
+    d <- d0
+  }
+  return(round(parameters,digits = 6))
+}
+
+fletcher_reeves(objective_function_f_r,parameters = parameters)
+```
+
+```{r}
+
+objective_function_b_m <- function(x) {
+  return(x*exp(-x^2))
+}
+bisection_example <- expression(x*exp(-x^2))
+first_deriv_f_b_m <- D(expr = bisection_example,name = "x")
+
+
+derivative_objective_function_b_m <- function(x) {
+  return(x*exp(-x^2))
+}
+
+interval <- c(-3,2)
+
+bisection_method <- function(interval, error_margin = 1e-10){
+  
+  a = interval[1]
+  b = interval[2]
+  
+  while(abs(a - b) > error_margin){
+    
+    theta = 1/2*(a+b)
+    
+    derivative_objective_function_b_m(theta)
+    
+    if(derivative_objective_function_b_m(theta) < 0){
+      
+      a <- theta
+      
+    }else if(derivative_objective_function_b_m(theta) > 0){
+      
+      b <- theta
+    
+    }else{
+      return(theta)
+    }
+  }
+  return(theta)
+}
+bisection_method(interval)
+```
+
+```{r}
+initial_expression <- expression(x*exp(-x^2))
+
+first_deriv_n_m <- D(initial_expression, name = "x")
+first_deriv_n_m
+x <- seq(0,10)
+
+first_derivative_objective_function <- function(x){
+  return(exp(-x^2) - x * (exp(-x^2) * (2 * x)))
+}
+
+first_derivative_expression <- expression(exp(-x^2) - x * (exp(-x^2) * (2 * x)))
+
+second_derivative_n_m <- D(first_derivative_expression, name = "x")
+second_derivative_n_m
+
+second_derivative_objective_function <- function(x){
+  return(-(exp(-x^2) * (2 * x) + ((exp(-x^2) * (2 * x)) + x * (exp(-x^2) * 
+    2 - exp(-x^2) * (2 * x) * (2 * x)))))
+}
+
+first_derivative_objective_function(2)
+second_derivative_objective_function(2)
+  
+newton_method <- function(initial_theta, error_margin = 1e-10){
+  
+  theta <- 0
+  
+  while(abs(first_derivative_objective_function(theta)) > error_margin){
+    
+    theta <- initial_theta - (first_derivative_objective_function(initial_theta)/second_derivative_objective_function(initial_theta))
+    
+    initial_theta <- theta
+    
+  }
+  return(theta)
+}
+newton_method(0.5)
+
+plot(x= x*exp(-x^2), type = "l")
+
+
+
+```
 
